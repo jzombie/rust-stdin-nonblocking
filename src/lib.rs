@@ -17,22 +17,20 @@ use std::time::Duration;
 /// use std::sync::mpsc::TryRecvError;
 /// use std::time::Duration;
 ///
-/// fn main() {
-///     let stdin_stream = spawn_stdin_stream();
+/// let stdin_stream = spawn_stdin_stream();
 ///
-///     loop {
-///         match stdin_stream.try_recv() {
-///             Ok(line) => println!("Received: {}", line),
-///             Err(TryRecvError::Empty) => {
-///                 // No input yet; continue execution
-///             }
-///             Err(TryRecvError::Disconnected) => {
-///                 println!("Input stream closed. Exiting...");
-///                 break;
-///             }
+/// loop {
+///     match stdin_stream.try_recv() {
+///         Ok(line) => println!("Received: {}", line),
+///         Err(TryRecvError::Empty) => {
+///             // No input yet; continue execution
 ///         }
-///         std::thread::sleep(Duration::from_millis(500));
+///         Err(TryRecvError::Disconnected) => {
+///             println!("Input stream closed. Exiting...");
+///             break;
+///         }
 ///     }
+///     std::thread::sleep(Duration::from_millis(500));
 /// }
 /// ```
 pub fn spawn_stdin_stream() -> Receiver<String> {
@@ -74,10 +72,8 @@ pub fn spawn_stdin_stream() -> Receiver<String> {
 /// ```
 /// use stdin_nonblocking::get_stdin_or_default;
 ///
-/// fn main() {
-///     let input = get_stdin_or_default(Some("fallback_value"));
-///     println!("Final input: {}", input.unwrap_or_default());
-/// }
+/// let input = get_stdin_or_default(Some("fallback_value"));
+/// println!("Final input: {}", input.unwrap_or_default());
 /// ```
 pub fn get_stdin_or_default(default: Option<&str>) -> Option<String> {
     let stdin_channel = spawn_stdin_stream();
