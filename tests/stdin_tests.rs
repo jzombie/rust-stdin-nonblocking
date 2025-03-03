@@ -1,4 +1,6 @@
-use std::io::Write;
+use std::fs::File;
+use std::io::{Read, Write};
+use std::path::Path;
 use std::process::{Command, Stdio};
 
 /// Runs an actual workspace binary (`test_binary` or `tokio-example-app`) and
@@ -81,5 +83,19 @@ fn test_empty_input_tokio_app() {
         output.contains("fallback_value"),
         "Expected fallback value but got: {}",
         output
+    );
+}
+
+/// Test reading the README.md file and ensure all content is captured
+#[test]
+fn test_multi_line_content() {
+    let input = "line1\nline2\r\nline3\rline4\nline5";
+
+    // Run the binary or command and capture the output
+    let output = run_binary("test_binary", input);
+
+    assert_eq!(
+        output,
+        "Received input: Some(\"line1\\nline2\\nline3\\rline4\\nline5\")\n"
     );
 }
