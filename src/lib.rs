@@ -76,7 +76,8 @@ pub fn spawn_stdin_stream() -> Receiver<String> {
 /// use stdin_nonblocking::get_stdin_or_default;
 ///
 /// let input = get_stdin_or_default(Some("fallback_value"));
-/// println!("Final input: {}", input.unwrap_or_default());
+///
+/// assert_eq!(input, Some("fallback_value".to_string()));
 /// ```
 pub fn get_stdin_or_default(default: Option<&str>) -> Option<String> {
     let stdin_channel = spawn_stdin_stream();
