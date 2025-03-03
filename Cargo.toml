@@ -15,3 +15,6 @@ members = [
     "tokio-example-app"
 ]
 resolver = "2"
+
+[dev-dependencies]
+doc-comment = "0.3.3"
