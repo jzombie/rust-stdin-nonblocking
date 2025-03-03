@@ -50,7 +50,7 @@ fn run_binary(binary: &str, input: &str) -> String {
 #[test]
 fn test_piped_input_sync_app() {
     let output = run_binary("test_binary", "test input");
-    assert!(output.contains("Received input: test input"));
+    assert!(output.contains("Received input: Some(\"test input\")"));
 }
 
 /// Test `test_binary` with empty input (should use fallback)
@@ -68,10 +68,10 @@ fn test_empty_input_sync_app() {
 #[test]
 fn test_piped_input_tokio_app() {
     let output = run_binary("tokio-example-app", "test input");
-    assert!(output.contains("Received input: test input"));
+    assert!(output.contains("Received input: Some(\"test input\")"));
 }
 
-/// Yest `tokio-example-app` with empty input (should use fallback)
+/// Test `tokio-example-app` with empty input (should use fallback)
 #[test]
 fn test_empty_input_tokio_app() {
     let output = run_binary("tokio-example-app", "");
