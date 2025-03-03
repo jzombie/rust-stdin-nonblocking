@@ -1,7 +1,9 @@
 use std::io::Write;
 use std::process::{Command, Stdio};
 
-/// Runs a workspace binary (`test_binary` or `tokio-example-app`) and passes input via stdin
+/// Runs an actual workspace binary (`test_binary` or `tokio-example-app`) and
+/// provides input via stdin to observe how the binaries respond, rather than
+/// mocking the inputs.
 fn run_binary(binary: &str, input: &str) -> String {
     // Ensure all binaries are built first
     let build_status = Command::new("cargo")
