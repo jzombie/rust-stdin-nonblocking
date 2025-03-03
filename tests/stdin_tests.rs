@@ -1,6 +1,4 @@
-use std::env;
 use std::io::Write;
-use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 /// Runs a workspace binary (`test_binary` or `tokio-example-app`) and passes input via stdin
