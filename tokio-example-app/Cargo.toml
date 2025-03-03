@@ -1,0 +1,10 @@
+[package]
+name = "tokio-example-app"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+tokio = { version = "1.43.0", features = ["rt-multi-thread", "time"] }
+stdin-nonblocking = { path = "../" }
+
