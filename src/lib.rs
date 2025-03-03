@@ -81,12 +81,20 @@ pub fn spawn_stdin_stream() -> Receiver<String> {
 /// ```
 pub fn get_stdin_or_default(default: Option<&str>) -> Option<String> {
     let stdin_channel = spawn_stdin_stream();
+    let mut input = String::new();
 
     // Give the reader thread a short time to capture any available input
     thread::sleep(Duration::from_millis(50));
 
-    match stdin_channel.try_recv() {
-        Ok(input) if !input.trim().is_empty() => Some(input),
-        _ => default.map(|s| s.to_string()),
+    while let Ok(line) = stdin_channel.try_recv() {
+        input.push_str(&line); // Collect all lines
+        input.push('\n'); // Add a newline between lines
+    }
+
+    // If input was collected, return it. Otherwise, return the default value.
+    if !input.trim().is_empty() {
+        Some(input.trim().to_string())
+    } else {
+        default.map(|s| s.to_string())
     }
 }
