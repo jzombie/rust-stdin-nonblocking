@@ -1,4 +1,4 @@
-# Rust stdin nonblocking
+# Rust `stdin` Nonblocking
 
 [![made-with-rust][rust-logo]][rust-src-page]
 [![crates.io][crates-badge]][crates-page]
@@ -12,7 +12,7 @@
 | macOS-latest  | [![macOS Tests][macos-latest-badge]][macos-latest-workflow]                          |
 | Windows-latest| [![Windows Tests][windows-latest-badge]][windows-latest-workflow]                    |
 
-Dependency-less non-blocking stdin reader using background threads. Supports streaming and immediate fallback defaults.
+Dependency-less non-blocking `stdin` reader using background threads. Supports streaming and immediate fallback defaults.
 
 ## Install
 
@@ -22,7 +22,7 @@ cargo add stdin-nonblocking
 
 ## Usage
 
-### Get stdin or default
+### Get `stdin` or Default
 
 ```rust
 use stdin_nonblocking::get_stdin_or_default;
@@ -32,7 +32,7 @@ let input = get_stdin_or_default(Some("fallback_value"));
 assert_eq!(input, Some("fallback_value".to_string()));
 ```
 
-### Read stdin as Stream
+### Read `stdin` as Stream
 
 ```rust
 use stdin_nonblocking::spawn_stdin_stream;
