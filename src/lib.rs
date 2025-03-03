@@ -1,3 +1,6 @@
+#[cfg(doctest)]
+doc_comment::doctest!("../README.md");
+
 use std::io::{self, BufRead};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
@@ -17,22 +20,20 @@ use std::time::Duration;
 /// use std::sync::mpsc::TryRecvError;
 /// use std::time::Duration;
 ///
-/// fn main() {
-///     let stdin_stream = spawn_stdin_stream();
+/// let stdin_stream = spawn_stdin_stream();
 ///
-///     loop {
-///         match stdin_stream.try_recv() {
-///             Ok(line) => println!("Received: {}", line),
-///             Err(TryRecvError::Empty) => {
-///                 // No input yet; continue execution
-///             }
-///             Err(TryRecvError::Disconnected) => {
-///                 println!("Input stream closed. Exiting...");
-///                 break;
-///             }
+/// loop {
+///     match stdin_stream.try_recv() {
+///         Ok(line) => println!("Received: {}", line),
+///         Err(TryRecvError::Empty) => {
+///             // No input yet; continue execution
 ///         }
-///         std::thread::sleep(Duration::from_millis(500));
+///         Err(TryRecvError::Disconnected) => {
+///             println!("Input stream closed. Exiting...");
+///             break;
+///         }
 ///     }
+///     std::thread::sleep(Duration::from_millis(500));
 /// }
 /// ```
 pub fn spawn_stdin_stream() -> Receiver<String> {
@@ -62,30 +63,38 @@ pub fn spawn_stdin_stream() -> Receiver<String> {
 /// Reads from stdin if available, otherwise returns a default value.
 ///
 /// **Non-blocking:** This function polls `stdin` once and immediately returns.
+/// If no input is available within the polling time, it returns the provided default value.
 ///
 /// # Arguments
-/// * `default` - A fallback value returned if no input is available.
+/// * `default` - An optional fallback value returned if no input is available.
 ///
 /// # Returns
-/// * `String` - Trimmed stdin input or `default` if no input is received.
+/// * `Option<String>` - The trimmed `stdin` input as a `String` if available, or the provided `default` as a `String` if no input is received.
 ///
 /// # Example
 /// ```
 /// use stdin_nonblocking::get_stdin_or_default;
 ///
-/// fn main() {
-///     let input = get_stdin_or_default("fallback_value");
-///     println!("Final input: {}", input);
-/// }
+/// let input = get_stdin_or_default(Some("fallback_value"));
+///
+/// assert_eq!(input, Some("fallback_value".to_string()));
 /// ```
-pub fn get_stdin_or_default(default: &str) -> String {
+pub fn get_stdin_or_default(default: Option<&str>) -> Option<String> {
     let stdin_channel = spawn_stdin_stream();
+    let mut input = String::new();
 
     // Give the reader thread a short time to capture any available input
     thread::sleep(Duration::from_millis(50));
 
-    match stdin_channel.try_recv() {
-        Ok(input) if !input.trim().is_empty() => input,
-        _ => default.to_string(),
+    while let Ok(line) = stdin_channel.try_recv() {
+        input.push_str(&line); // Collect all lines
+        input.push('\n'); // Add a newline between lines
+    }
+
+    // If input was collected, return it. Otherwise, return the default value.
+    if !input.trim().is_empty() {
+        Some(input.trim().to_string())
+    } else {
+        default.map(|s| s.to_string())
     }
 }

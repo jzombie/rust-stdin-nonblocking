@@ -1,13 +1,13 @@
-use std::env;
 use std::io::Write;
-use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
-/// Runs a workspace binary (`test_binary` or `tokio-example-app`) and passes input via stdin
+/// Runs an actual workspace binary (`test_binary` or `tokio-example-app`) and
+/// provides input via stdin to observe how the binaries respond, rather than
+/// mocking the inputs.
 fn run_binary(binary: &str, input: &str) -> String {
     // Ensure all binaries are built first
     let build_status = Command::new("cargo")
-        .args(["build", "--bins"])
+        .args(["build", "--workspace"])
         .status()
         .expect("Failed to build workspace binaries");
 
@@ -15,28 +15,27 @@ fn run_binary(binary: &str, input: &str) -> String {
         panic!("Failed to build workspace binaries");
     }
 
-    // Attempt to locate binary using Cargo's runtime variable
-    let binary_path = env::var(format!("CARGO_BIN_EXE_{}", binary.replace("-", "_")))
-        .ok()
-        .or_else(|| {
-            // Fallback: Manually construct path inside `target/debug/`
-            let mut path = PathBuf::from("target/debug");
-            path.push(binary);
-            if path.exists() {
-                Some(path.to_string_lossy().into_owned())
-            } else {
-                None
-            }
-        })
-        .unwrap_or_else(|| panic!("Failed to find binary: {}", binary));
+    // Create a mutable Command object
+    let mut child = Command::new("cargo");
 
-    // Run the binary
-    let mut child = Command::new(binary_path)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
+    // Set the command options based on the binary type
+    if binary == "test_binary" {
+        child.arg("run").arg("--bin").arg(binary);
+    } else if binary == "tokio-example-app" {
+        child.arg("run").arg("--package").arg(binary);
+    } else {
+        panic!("Unknown binary: {}", binary);
+    }
+
+    // Set up stdin and stdout for the process
+    child.stdin(Stdio::piped()).stdout(Stdio::piped());
+
+    // Spawn the process
+    let mut child = child
         .spawn()
-        .expect(&format!("Failed to spawn process: {}", binary));
+        .unwrap_or_else(|_| panic!("Failed to spawn process: {}", binary));
 
+    // Pass the input to the binary if needed
     if let Some(mut stdin) = child.stdin.take() {
         if !input.is_empty() {
             writeln!(stdin, "{}", input).expect("Failed to write to stdin");
@@ -44,6 +43,7 @@ fn run_binary(binary: &str, input: &str) -> String {
         drop(stdin); // Close stdin explicitly to send EOF
     }
 
+    // Capture and return the output
     let output = child.wait_with_output().expect("Failed to read stdout");
     String::from_utf8(output.stdout).expect("Invalid UTF-8 output")
 }
@@ -52,7 +52,7 @@ fn run_binary(binary: &str, input: &str) -> String {
 #[test]
 fn test_piped_input_sync_app() {
     let output = run_binary("test_binary", "test input");
-    assert!(output.contains("Received input: test input"));
+    assert!(output.contains("Received input: Some(\"test input\")"));
 }
 
 /// Test `test_binary` with empty input (should use fallback)
@@ -70,10 +70,10 @@ fn test_empty_input_sync_app() {
 #[test]
 fn test_piped_input_tokio_app() {
     let output = run_binary("tokio-example-app", "test input");
-    assert!(output.contains("Received input: test input"));
+    assert!(output.contains("Received input: Some(\"test input\")"));
 }
 
-/// Yest `tokio-example-app` with empty input (should use fallback)
+/// Test `tokio-example-app` with empty input (should use fallback)
 #[test]
 fn test_empty_input_tokio_app() {
     let output = run_binary("tokio-example-app", "");
@@ -81,5 +81,19 @@ fn test_empty_input_tokio_app() {
         output.contains("fallback_value"),
         "Expected fallback value but got: {}",
         output
+    );
+}
+
+/// Test reading the README.md file and ensure all content is captured
+#[test]
+fn test_multi_line_content() {
+    let input = "line1\nline2\r\nline3\rline4\nline5";
+
+    // Run the binary or command and capture the output
+    let output = run_binary("test_binary", input);
+
+    assert_eq!(
+        output,
+        "Received input: Some(\"line1\\nline2\\nline3\\rline4\\nline5\")\n"
     );
 }
