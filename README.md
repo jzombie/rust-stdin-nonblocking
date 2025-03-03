@@ -29,7 +29,7 @@ use stdin_nonblocking::get_stdin_or_default;
 
 let input = get_stdin_or_default(Some("fallback_value"));
 
-assert!(input, Some("fallback_value"));
+assert_eq!(input, Some("fallback_value".to_string()));
 ```
 
 ### Read stdin as Stream
