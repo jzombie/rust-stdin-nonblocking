@@ -31,7 +31,7 @@ fn run_binary(binary: &str, input: &str) -> String {
     // Spawn the process
     let mut child = child
         .spawn()
-        .expect(&format!("Failed to spawn process: {}", binary));
+        .unwrap_or_else(|_| panic!("Failed to spawn process: {}", binary));
 
     // Pass the input to the binary if needed
     if let Some(mut stdin) = child.stdin.take() {
