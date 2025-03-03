@@ -7,7 +7,7 @@ use std::process::{Command, Stdio};
 fn run_binary(binary: &str, input: &str) -> String {
     // Ensure all binaries are built first
     let build_status = Command::new("cargo")
-        .args(["build", "--bins"])
+        .args(["build", "--workspace"])
         .status()
         .expect("Failed to build workspace binaries");
 
