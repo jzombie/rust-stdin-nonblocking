@@ -15,28 +15,27 @@ fn run_binary(binary: &str, input: &str) -> String {
         panic!("Failed to build workspace binaries");
     }
 
-    // Attempt to locate binary using Cargo's runtime variable
-    let binary_path = env::var(format!("CARGO_BIN_EXE_{}", binary.replace("-", "_")))
-        .ok()
-        .or_else(|| {
-            // Fallback: Manually construct path inside `target/debug/`
-            let mut path = PathBuf::from("target/debug");
-            path.push(binary);
-            if path.exists() {
-                Some(path.to_string_lossy().into_owned())
-            } else {
-                None
-            }
-        })
-        .unwrap_or_else(|| panic!("Failed to find binary: {}", binary));
+    // Create a mutable Command object
+    let mut child = Command::new("cargo");
 
-    // Run the binary
-    let mut child = Command::new(binary_path)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
+    // Set the command options based on the binary type
+    if binary == "test_binary" {
+        child.arg("run").arg("--bin").arg(binary);
+    } else if binary == "tokio-example-app" {
+        child.arg("run").arg("--package").arg(binary);
+    } else {
+        panic!("Unknown binary: {}", binary);
+    }
+
+    // Set up stdin and stdout for the process
+    child.stdin(Stdio::piped()).stdout(Stdio::piped());
+
+    // Spawn the process
+    let mut child = child
         .spawn()
         .expect(&format!("Failed to spawn process: {}", binary));
 
+    // Pass the input to the binary if needed
     if let Some(mut stdin) = child.stdin.take() {
         if !input.is_empty() {
             writeln!(stdin, "{}", input).expect("Failed to write to stdin");
@@ -44,6 +43,7 @@ fn run_binary(binary: &str, input: &str) -> String {
         drop(stdin); // Close stdin explicitly to send EOF
     }
 
+    // Capture and return the output
     let output = child.wait_with_output().expect("Failed to read stdout");
     String::from_utf8(output.stdout).expect("Invalid UTF-8 output")
 }
