@@ -11,6 +11,11 @@ use std::time::Duration;
 /// This function returns an `mpsc Receiver`, allowing non-blocking polling
 /// of stdin input just like `spawn_stdin_channel`.
 ///
+/// **Handling Interactive Mode:**
+/// - If stdin is a terminal (interactive mode), this function immediately returns an empty receiver.
+/// - This prevents blocking behavior when running interactively.
+/// - When reading from a file or pipe, the background thread captures input line by line.
+///
 /// # Returns
 /// A `Receiver<String>` that emits lines from stdin.
 ///
@@ -70,6 +75,11 @@ pub fn spawn_stdin_stream() -> Receiver<String> {
 ///
 /// **Non-blocking:** This function polls `stdin` once and immediately returns.
 /// If no input is available within the polling time, it returns the provided default value.
+///
+/// **Handling Interactive Mode:**
+/// - If running interactively (stdin is a terminal), this function returns the default value immediately.
+/// - This prevents hanging on waiting for user input in interactive sessions.
+/// - When used with redirected input (e.g., from a file or pipe), it collects available input.
 ///
 /// # Arguments
 /// * `default` - An optional fallback value returned if no input is available.
