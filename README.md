@@ -27,6 +27,8 @@ cargo add stdin-nonblocking
 ```rust
 use stdin_nonblocking::get_stdin_or_default;
 
+// If running in interactive mode (stdin is a terminal),
+// `get_stdin_or_default` returns the default value immediately.
 let input = get_stdin_or_default(Some("fallback_value"));
 
 assert_eq!(input, Some("fallback_value".to_string()));
@@ -39,6 +41,8 @@ use stdin_nonblocking::spawn_stdin_stream;
 use std::sync::mpsc::TryRecvError;
 use std::time::Duration;
 
+// If running in interactive mode (stdin is a terminal),
+// `spawn_stdin_stream` returns an empty receiver, meaning no input will be received.
 let stdin_stream = spawn_stdin_stream();
 
 loop {
