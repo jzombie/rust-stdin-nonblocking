@@ -1,7 +1,7 @@
 #[cfg(doctest)]
 doc_comment::doctest!("../README.md");
 
-use std::io::{self, BufRead};
+use std::io::{self, BufRead, IsTerminal};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
 use std::time::Duration;
@@ -38,6 +38,12 @@ use std::time::Duration;
 /// ```
 pub fn spawn_stdin_stream() -> Receiver<String> {
     let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
+
+    // If stdin is a terminal, return early (don't block). This check prevents potential blocking
+    // if the program is running interactively (i.e. the user is typing in the terminal).
+    if io::stdin().is_terminal() {
+        return rx;
+    }
 
     thread::spawn(move || {
         let stdin = io::stdin();
