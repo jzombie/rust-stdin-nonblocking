@@ -52,11 +52,11 @@ pub fn spawn_stdin_stream() -> Receiver<Vec<u8>> {
         let mut stdin_lock = stdin.lock();
 
         match stdin_lock.read_to_end(&mut buffer) {
-            Ok(0) => return, // EOF, no data
+            Ok(0) => (), // EOF, no data
             Ok(_) => {
                 let _ = tx.send(buffer); // Send full binary data
             }
-            Err(_) => return, // Read failure
+            Err(_) => (), // Read failure
         }
     });
 
