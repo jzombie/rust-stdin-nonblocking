@@ -50,11 +50,6 @@ fn run_binary(binary: &str, input: &[u8]) -> Vec<u8> {
     output.stdout // Return raw binary output
 }
 
-/// **Helper**: Convert binary output to a UTF-8 string safely (lossy conversion).
-fn decode_output(output: &[u8]) -> String {
-    String::from_utf8_lossy(output).to_string()
-}
-
 /// **Test binary input handling with raw data**
 #[test]
 fn test_binary_input_handling() {
