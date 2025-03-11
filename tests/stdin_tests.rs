@@ -1,10 +1,10 @@
 use std::io::Write;
 use std::process::{Command, Stdio};
 
-/// Runs an actual workspace binary (`test_binary` or `tokio-example-app`) and
-/// provides input via stdin to observe how the binaries respond, rather than
-/// mocking the inputs.
-fn run_binary(binary: &str, input: &str) -> String {
+/// Runs an actual workspace binary (`test_binary` or `tokio-example-app`)
+/// and provides **binary input** via stdin.
+/// Returns **raw bytes** instead of assuming UTF-8.
+fn run_binary(binary: &str, input: &[u8]) -> Vec<u8> {
     // Ensure all binaries are built first
     let build_status = Command::new("cargo")
         .args(["build", "--workspace"])
@@ -35,65 +35,96 @@ fn run_binary(binary: &str, input: &str) -> String {
         .spawn()
         .unwrap_or_else(|_| panic!("Failed to spawn process: {}", binary));
 
-    // Pass the input to the binary if needed
+    // Pass binary input to the process if needed
     if let Some(mut stdin) = child.stdin.take() {
         if !input.is_empty() {
-            writeln!(stdin, "{}", input).expect("Failed to write to stdin");
+            stdin
+                .write_all(input)
+                .expect("Failed to write binary to stdin");
         }
         drop(stdin); // Close stdin explicitly to send EOF
     }
 
-    // Capture and return the output
+    // Capture binary output
     let output = child.wait_with_output().expect("Failed to read stdout");
-    String::from_utf8(output.stdout).expect("Invalid UTF-8 output")
+    output.stdout // Return raw binary output
 }
 
-/// Test `test_binary` with piped input
-#[test]
-fn test_piped_input_sync_app() {
-    let output = run_binary("test_binary", "test input");
-    assert!(output.contains("Received input: Some(\"test input\")"));
+/// **Helper**: Convert binary output to a UTF-8 string safely (lossy conversion).
+fn decode_output(output: &[u8]) -> String {
+    String::from_utf8_lossy(output).to_string()
 }
 
-/// Test `test_binary` with empty input (should use fallback)
+/// **Test binary input handling with raw data**
 #[test]
-fn test_empty_input_sync_app() {
-    let output = run_binary("test_binary", "");
-    assert!(
-        output.contains("fallback_value"),
-        "Expected fallback value but got: {}",
-        output
-    );
+fn test_binary_input_handling() {
+    {
+        let binary_input: &[u8] = b"\xDE\xAD\xBE\xEF"; // Arbitrary binary data
+        let output_bytes = run_binary("test_binary", binary_input);
+
+        assert_eq!(
+            output_bytes, binary_input,
+            "Expected output to match input, but got: {:?}",
+            output_bytes
+        );
+    }
+
+    {
+        let binary_input: &[u8] = b"\xDE\xAD\xBE\xEF"; // Same binary input for tokio-example-app
+        let output_bytes = run_binary("tokio-example-app", binary_input);
+
+        assert_eq!(
+            output_bytes, binary_input,
+            "Expected output to match input, but got: {:?}",
+            output_bytes
+        );
+    }
 }
 
-/// Test `tokio-example-app` with piped input
 #[test]
-fn test_piped_input_tokio_app() {
-    let output = run_binary("tokio-example-app", "test input");
-    assert!(output.contains("Received input: Some(\"test input\")"));
+fn test_text_input_handling() {
+    {
+        let text_input = b"Hello, binary world!";
+        let output_bytes = run_binary("test_binary", text_input);
+
+        assert_eq!(
+            output_bytes, text_input,
+            "Expected output to match input, but got: {:?}",
+            output_bytes
+        );
+    }
+
+    {
+        let text_input = b"Hello, binary world!";
+        let output_bytes = run_binary("tokio-example-app", text_input);
+
+        assert_eq!(
+            output_bytes, text_input,
+            "Expected output to match input, but got: {:?}",
+            output_bytes
+        );
+    }
 }
 
-/// Test `tokio-example-app` with empty input (should use fallback)
 #[test]
-fn test_empty_input_tokio_app() {
-    let output = run_binary("tokio-example-app", "");
-    assert!(
-        output.contains("fallback_value"),
-        "Expected fallback value but got: {}",
-        output
-    );
-}
+fn test_empty_input() {
+    {
+        let output_bytes = run_binary("test_binary", b"");
 
-/// Test reading the README.md file and ensure all content is captured
-#[test]
-fn test_multi_line_content() {
-    let input = "line1\nline2\r\nline3\rline4\nline5";
+        assert_eq!(
+            output_bytes, b"fallback_value",
+            "Expected fallback value but got: {:?}",
+            output_bytes
+        );
+    }
 
-    // Run the binary or command and capture the output
-    let output = run_binary("test_binary", input);
+    {
+        let output_bytes = run_binary("tokio-example-app", b"");
 
-    assert_eq!(
-        output,
-        "Received input: Some(\"line1\\nline2\\nline3\\rline4\\nline5\")\n"
-    );
+        assert_eq!(
+            output_bytes, b"fallback_value",
+            "Expected fallback value but got: {:?}",
+            output_bytes
+        );
+    }
 }
