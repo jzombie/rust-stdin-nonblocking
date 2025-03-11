@@ -34,7 +34,7 @@ use stdin_nonblocking::get_stdin_or_default;
 let input = get_stdin_or_default(Some(b"fallback_value"));
 
 // Input is always `Vec<u8>`, ensuring binary safety.
-assert_eq!(input, b"fallback_value".to_vec());
+assert_eq!(input, Some(b"fallback_value".to_vec()));
 ```
 
 ### Read `stdin` as Stream

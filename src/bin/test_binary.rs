@@ -7,6 +7,6 @@ fn main() {
 
     // Print raw binary data instead of Debug format
     io::stdout()
-        .write_all(&input)
+        .write_all(&input.unwrap())
         .expect("Failed to write output");
 }

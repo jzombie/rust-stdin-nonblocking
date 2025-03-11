@@ -1,3 +1,6 @@
+#[cfg(doctest)]
+doc_comment::doctest!("../README.md");
+
 use std::io::{self, IsTerminal, Read};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
@@ -77,7 +80,7 @@ pub fn spawn_stdin_stream() -> Receiver<Vec<u8>> {
 /// * `default` - An optional fallback value returned if no input is available.
 ///
 /// # Returns
-/// * `Vec<u8>` - The full stdin input (or default value as bytes).
+/// * `Option<Vec<u8>>` - The full stdin input (or default value as bytes).
 ///
 /// # Example
 /// ```
@@ -85,18 +88,22 @@ pub fn spawn_stdin_stream() -> Receiver<Vec<u8>> {
 ///
 /// let input = get_stdin_or_default(Some(b"fallback_value"));
 ///
-/// assert_eq!(input, b"fallback_value".to_vec());
+/// assert_eq!(input, Some(b"fallback_value".to_vec()));
 /// ```
-pub fn get_stdin_or_default(default: Option<&[u8]>) -> Vec<u8> {
+pub fn get_stdin_or_default(default: Option<&[u8]>) -> Option<Vec<u8>> {
     let stdin_channel = spawn_stdin_stream();
 
     // Give the reader thread a short time to capture any available input
     thread::sleep(Duration::from_millis(50));
 
     if let Ok(data) = stdin_channel.try_recv() {
-        return data;
+        return Some(data);
+    }
+
+    if default.is_none() {
+        return None;
     }
 
     // No input available, return the default value
-    default.unwrap_or(b"").to_vec()
+    Some(default.unwrap_or(b"").to_vec())
 }
