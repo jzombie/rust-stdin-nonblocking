@@ -1,10 +1,9 @@
 #[cfg(doctest)]
 doc_comment::doctest!("../README.md");
 
-use std::io::{self, BufRead, IsTerminal};
+use std::io::{self, BufRead, IsTerminal, Read};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
-use std::time::Duration;
 
 /// Spawns a background thread that continuously reads from stdin as a stream.
 ///
@@ -95,22 +94,31 @@ pub fn spawn_stdin_stream() -> Receiver<String> {
 ///
 /// assert_eq!(input, Some("fallback_value".to_string()));
 /// ```
-pub fn get_stdin_or_default(default: Option<&str>) -> Option<String> {
-    let stdin_channel = spawn_stdin_stream();
-    let mut input = String::new();
-
-    // Give the reader thread a short time to capture any available input
-    thread::sleep(Duration::from_millis(50));
-
-    while let Ok(line) = stdin_channel.try_recv() {
-        input.push_str(&line); // Collect all lines
-        input.push('\n'); // Add a newline between lines
+/// Reads from stdin if available, otherwise returns a default value.
+/// - Works with **both binary and text data**.
+/// - Uses blocking mode to capture full piped input.
+/// - Returns a `Vec<u8>` to avoid UTF-8 errors.
+///
+/// # Arguments
+/// * `default` - An optional fallback value (used if stdin is empty).
+///
+/// # Returns
+/// * `Vec<u8>` - The full stdin input (or default value as bytes).
+pub fn get_stdin_or_default(default: Option<&[u8]>) -> Vec<u8> {
+    // If running interactively, return the default value (to avoid blocking).
+    if io::stdin().is_terminal() {
+        return default.unwrap_or(b"").to_vec();
     }
 
-    // If input was collected, return it. Otherwise, return the default value.
-    if !input.trim().is_empty() {
-        Some(input.trim().to_string())
+    // Read the entire stdin into a byte buffer
+    let mut buffer = Vec::new();
+    io::stdin()
+        .read_to_end(&mut buffer)
+        .expect("Failed to read stdin");
+
+    if !buffer.is_empty() {
+        buffer
     } else {
-        default.map(|s| s.to_string())
+        default.unwrap_or(b"").to_vec()
     }
 }
