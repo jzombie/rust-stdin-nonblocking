@@ -1,6 +1,6 @@
 [package]
 name = "stdin-nonblocking"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Jeremy Harris <jeremy.harris@zenosmosis.com>"]
 description = "Dependency-less non-blocking stdin reader using background threads. Supports streaming and immediate fallback defaults."
 repository = "https://github.com/jzombie/rust-stdin-nonblocking"
