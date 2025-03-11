@@ -14,6 +14,8 @@
 
 Dependency-less non-blocking `stdin` reader using background threads. Supports streaming and immediate fallback defaults.
 
+Supports **binary data**, streaming, and immediate fallback defaults.
+
 ## Install
 
 ```sh
@@ -29,9 +31,10 @@ use stdin_nonblocking::get_stdin_or_default;
 
 // If running in interactive mode (stdin is a terminal),
 // `get_stdin_or_default` returns the default value immediately.
-let input = get_stdin_or_default(Some("fallback_value"));
+let input = get_stdin_or_default(Some(b"fallback_value"));
 
-assert_eq!(input, Some("fallback_value".to_string()));
+// Input is always `Vec<u8>`, ensuring binary safety.
+assert_eq!(input, b"fallback_value".to_vec());
 ```
 
 ### Read `stdin` as Stream
@@ -47,7 +50,7 @@ let stdin_stream = spawn_stdin_stream();
 
 loop {
     match stdin_stream.try_recv() {
-        Ok(line) => println!("Received: {}", line),
+        Ok(bytes) => println!("Received: {:?}", bytes), // Always raw bytes
         Err(TryRecvError::Empty) => {
             // No input yet; continue execution
         }
