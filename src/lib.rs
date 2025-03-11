@@ -100,9 +100,8 @@ pub fn get_stdin_or_default(default: Option<&[u8]>) -> Option<Vec<u8>> {
         return Some(data);
     }
 
-    if default.is_none() {
-        return None;
-    }
+    // Return `None` if no default
+    default?;
 
     // No input available, return the default value
     Some(default.unwrap_or(b"").to_vec())
