@@ -5,6 +5,6 @@ edition = "2021"
 publish = false
 
 [dependencies]
-tokio = { version = "1.43.0", features = ["rt-multi-thread", "time"] }
+tokio = { version = "1.43.0", features = ["full"] }
 stdin-nonblocking = { path = "../" }
 
