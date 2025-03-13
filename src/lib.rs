@@ -66,21 +66,19 @@ pub fn spawn_stdin_stream() -> Receiver<Vec<u8>> {
     rx
 }
 
-/// Reads from stdin if available, otherwise returns a default value.
+/// Reads stdin if available; otherwise, returns a default value.
 ///
-/// **Non-blocking:** This function polls `stdin` once and immediately returns.
-/// If no input is available within the polling time, it returns the provided default value.
-///
-/// **Handling Interactive Mode:**
-/// - If running interactively (stdin is a terminal), this function returns the default value immediately.
-/// - This prevents hanging while waiting for user input in interactive sessions.
-/// - When used with redirected input (e.g., from a file or pipe), it collects available **binary** input.
+/// This function intelligently determines whether to block:
+/// - **Interactive Mode**: If stdin is a terminal, the function immediately returns the default without blocking.
+/// - **Redirected Input**: If stdin is redirected from a file or pipe, it spawns a thread to read stdin and waits briefly (50ms).
+///   - If data arrives promptly, it returns immediately.
+///   - If no data is available within that short duration, it returns the provided default value.
 ///
 /// # Arguments
 /// * `default` - An optional fallback value returned if no input is available.
 ///
 /// # Returns
-/// * `Option<Vec<u8>>` - The full stdin input (or default value as bytes).
+/// * `Option<Vec<u8>>` - The stdin input if available, otherwise the provided default.
 ///
 /// # Example
 /// ```
