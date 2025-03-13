@@ -91,18 +91,15 @@ pub fn spawn_stdin_stream() -> Receiver<Vec<u8>> {
 /// assert_eq!(input, Some(b"fallback_value".to_vec()));
 /// ```
 pub fn get_stdin_or_default(default: Option<&[u8]>) -> Option<Vec<u8>> {
-    let stdin_channel = spawn_stdin_stream();
+    if !io::stdin().is_terminal() {
+        let stdin_channel = spawn_stdin_stream();
 
-    // Give the reader thread a short time to capture any available input
-    thread::sleep(Duration::from_millis(50));
-
-    if let Ok(data) = stdin_channel.try_recv() {
-        return Some(data);
+        // Blocking recv() waits until data arrives or EOF occurs
+        match stdin_channel.recv() {
+            Ok(data) => return Some(data),
+            Err(e) => eprintln!("Channel closed without data: {}", e),
+        }
     }
 
-    // Return `None` if no default
-    default?;
-
-    // No input available, return the default value
-    Some(default.unwrap_or(b"").to_vec())
+    default.map(|val| val.to_vec())
 }
