@@ -4,7 +4,6 @@ doc_comment::doctest!("../README.md");
 use std::io::{self, IsTerminal, Read};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
-use std::time::Duration;
 
 /// Spawns a background thread that continuously reads from stdin as a binary stream.
 ///
